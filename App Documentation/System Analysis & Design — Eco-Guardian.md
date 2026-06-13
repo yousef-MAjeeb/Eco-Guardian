@@ -9,10 +9,6 @@
 | **Citizen (User)** | Primary app user — reports issues, views the community map, tracks report status |
 | **AI Service (Gemini 2.5 Flash)** | External API that transforms raw citizen descriptions into formally structured, authority-ready report drafts |
 
-> **Local Authority:** No direct system integration in MVP. The AI generates a professionally structured report the citizen can forward to the relevant authority via their preferred channel (email, portal, etc.).
-
-> **Admin:** There is no admin screen in the app. Platform administration is handled directly via the **Firebase Console**.
-
 ---
 
 ## 2. Use Case Diagram
@@ -112,12 +108,6 @@ graph TB
     Koin -.->|"injects"| Repo
 ```
 
-> **Notes:**
-> - `UI --> GMaps` — the Google Maps composable renders in the UI layer but **all map data (pins, camera position) is supplied by the ViewModel via StateFlow**. The UI fetches nothing directly.
-> - **Gemini API** is called via Retrofit from the Data layer. The key is obtained free from Google AI Studio — no credit card required. Key stored in `local.properties`, never committed to Git, accessed via `BuildConfig`.
-> - **Room** caches offline report drafts so user input is never lost if the network drops mid-submission.
-> - **No Cloud Functions** — the entire backend is driven by the Firebase SDK and direct Retrofit calls.
-
 ---
 
 ## 4. Database Design & Data Modelling
@@ -191,20 +181,13 @@ erDiagram
 
 **USER** (`userID` PK, `name`, `email`, `role` [citizen | admin], `profilePhotoURL`, `homeLatitude`, `homeLongitude`, `createdAt`)
 
-> `passwordHash` is **intentionally absent** — Firebase Authentication manages all credentials securely. Passwords must never be stored in Firestore.
-> `homeLatitude` / `homeLongitude` store the user's **saved home location preference** (FR-22), not their real-time GPS position.
-
 ---
 
 **REPORT** (`reportID` PK, `userID` FK → USER, `title`, `rawDescription`, `aiGeneratedReport`, `photoURL`, `category` [litter | pollution | dumping | other], `status` [submitted | resolved | cancelled], `latitude`, `longitude`, `createdAt`, `updatedAt`)
 
-> The AI generates a formally structured, authority-ready report draft. The citizen may forward this to the relevant local authority via their preferred channel. No direct authority system integration exists in MVP.
-
 ---
 
 **EVENT** (`eventID` PK, `organizerID` FK → USER, `title`, `description`, `latitude`, `longitude`, `eventDate`, `capacity`)
-
-> Events are **read-only listings** in MVP. Citizen registration for events is a future enhancement.
 
 ---
 
@@ -459,8 +442,6 @@ stateDiagram-v2
 ---
 
 ### 5.8 Class Diagram
-
-> **Design rule:** Domain models are **pure data classes** — they hold state only. All operations live in **Use Cases** and **Repositories**.
 
 ```mermaid
 classDiagram
