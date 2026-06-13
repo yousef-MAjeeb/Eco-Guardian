@@ -1,130 +1,126 @@
+# System Analysis & Design — Eco-Guardian
 
-## 2. Use Case Diagram & Descriptions
+---
 
-### Actors
+## 1. Actors
 
-|Actor|Description|
+| Actor | Description |
 |---|---|
-|**Citizen (User)**|Primary app user; reports issues, views map, attends events|
-|**Admin**|Platform manager; oversees reports, users, and events|
-|**Local Authority**|Receives reports and updates their resolution status|
-|**AI Service (Claude)**|External API that transforms raw descriptions into structured reports|
+| **Citizen (User)** | Primary app user — reports issues, views the community map, tracks report status |
+| **AI Service (Gemini 2.5 Flash)** | External API that transforms raw citizen descriptions into formally structured, authority-ready report drafts |
 
-### Use Case Diagram
+> **Local Authority:** No direct system integration in MVP. The AI generates a professionally structured report the citizen can forward to the relevant authority via their preferred channel (email, portal, etc.).
+
+> **Admin:** There is no admin screen in the app. Platform administration is handled directly via the **Firebase Console**.
+
+---
+
+## 2. Use Case Diagram
 
 ```mermaid
 graph TB
-    subgraph Eco-Guardian System
-        UC1[Register / Login]
-        UC2[Submit Environmental Report]
-        UC3[AI Report Generation]
-        UC4[View Community Map]
-        UC5[Track Report Status]
-        UC6[Browse Clean-up Events]
-        UC7[Register for Event]
-        UC8[Receive Push Notifications]
-        UC9[Manage Reports]
-        UC10[Manage Events]
-        UC11[Manage Users]
-        UC12[Receive Reports]
-        UC13[Update Report Status]
+    subgraph EcoGuardian["Eco-Guardian System"]
+        UC1["UC1: Register / Login"]
+        UC2["UC2: Submit Environmental Report"]
+        UC3["UC3: AI Report Generation"]
+        UC4["UC4: View Community Map"]
+        UC5["UC5: Track Report Status"]
+        UC6["UC6: Browse Clean-up Events"]
+        UC7["UC7: Community Resolve Report"]
+        UC8["UC8: Receive In-App Notification"]
     end
 
-    Citizen([👤 Citizen])
-    Admin([🛡️ Admin])
-    Authority([🏛️ Local Authority])
-    AIService([🤖 AI Service])
+    Citizen(["👤 Citizen"])
+    AIService(["🤖 AI Service — Gemini 2.5 Flash"])
 
-    Citizen -->|uses| UC1
-    Citizen -->|uses| UC2
-    Citizen -->|uses| UC4
-    Citizen -->|uses| UC5
-    Citizen -->|uses| UC6
-    Citizen -->|uses| UC7
-    Citizen -->|uses| UC8
+    Citizen --> UC1
+    Citizen --> UC2
+    Citizen --> UC4
+    Citizen --> UC5
+    Citizen --> UC6
+    Citizen --> UC7
+    Citizen --> UC8
 
-    UC2 -->|triggers| UC3
-    AIService -->|processes| UC3
-
-    Admin -->|manages| UC9
-    Admin -->|manages| UC10
-    Admin -->|manages| UC11
-
-    Authority -->|uses| UC12
-    Authority -->|uses| UC13
-    UC13 -->|triggers| UC8
+    UC2 -->|"triggers"| UC3
+    AIService -->|"processes"| UC3
+    UC5 -.->|"powered by"| UC8
 ```
 
 ### Use Case Descriptions
 
-|ID|Use Case|Actor|Description|
+| ID | Use Case | Actor | Description |
 |---|---|---|---|
-|UC1|Register / Login|Citizen|User creates account or logs in via email or Google OAuth|
-|UC2|Submit Environmental Report|Citizen|Capture photo, enter description, select category & GPS location|
-|UC3|AI Report Generation|AI Service|Transforms raw citizen input into a structured, authority-ready report|
-|UC4|View Community Map|Citizen|Browse geo-pinned reports around the user's neighbourhood|
-|UC5|Track Report Status|Citizen|Monitor report lifecycle from SUBMITTED → RESOLVED|
-|UC6|Browse Clean-up Events|Citizen|View upcoming community events by location and date|
-|UC7|Register for Event|Citizen|Sign up to attend a clean-up event|
-|UC8|Receive Notifications|Citizen|Get push notifications when report status changes|
-|UC9|Manage Reports|Admin|Review, approve, escalate, or close reports|
-|UC10|Manage Events|Admin|Create, edit, or cancel community events|
-|UC11|Manage Users|Admin|View, suspend, or remove user accounts|
-|UC12|Receive Reports|Local Authority|View incoming structured reports within their jurisdiction|
-|UC13|Update Report Status|Local Authority|Change report status as investigation proceeds|
+| UC1 | Register / Login | Citizen | Create account or sign in via email/password or Google OAuth |
+| UC2 | Submit Environmental Report | Citizen | Capture photo, enter description, confirm GPS location, generate AI draft, review, and submit |
+| UC3 | AI Report Generation | AI Service | Gemini 2.5 Flash transforms raw citizen input into a structured, authority-ready report draft |
+| UC4 | View Community Map | Citizen | Browse geo-pinned submitted reports on a live Google Map |
+| UC5 | Track Report Status | Citizen | Monitor the lifecycle of submitted reports from Submitted to Resolved |
+| UC6 | Browse Clean-up Events | Citizen | View upcoming community clean-up events by location and date — **read-only** |
+| UC7 | Community Resolve Report | Citizen | Nearby citizen marks a report as resolved with an optional follow-up photo — requires GPS proximity check |
+| UC8 | Receive In-App Notification | Citizen | Notified via Firestore real-time listener when their report status changes |
 
 ---
 
-###  Software Architecture Diagram
+## 3. Software Architecture Diagram
 
 ```mermaid
 graph TB
-    subgraph AndroidApp [Android App - Kotlin]
-        subgraph Presentation [Presentation Layer]
-            UI[Jetpack Compose UI\nScreens & Components]
-            VM[ViewModels\nStateFlow / LiveData]
+    subgraph AndroidApp["Android App — Kotlin + Jetpack Compose"]
+        subgraph Presentation["Presentation Layer"]
+            UI["Jetpack Compose UI\nScreens and Components"]
+            VM["ViewModels\nStateFlow"]
         end
-        subgraph Domain [Domain Layer]
-            UC_L[Use Cases\nBusiness Logic]
-            DM[Domain Models]
+        subgraph Domain["Domain Layer"]
+            UC_L["Use Cases\nBusiness Logic"]
+            DM["Domain Models\nPure Data Classes"]
         end
-        subgraph Data [Data Layer]
-            Repo[Repositories\nSingle Source of Truth]
-            LocalDS[Local Data Source\nRoom DB]
-            RemoteDS[Remote Data Source\nRetrofit + Firebase SDK]
+        subgraph Data["Data Layer"]
+            Repo["Repositories\nSingle Source of Truth"]
+            LocalDS["Local Data Source\nRoom DB"]
+            RemoteDS["Remote Data Source\nRetrofit + Firebase SDK"]
         end
+        Koin["Koin\nDependency Injection"]
     end
 
-    subgraph Firebase [Firebase Backend]
-        FB_Auth[Firebase Auth]
-        FB_Firestore[Cloud Firestore]
-        FB_Storage[Firebase Storage]
-        FB_FCM[Firebase FCM]
-        CF[Cloud Functions\nNode.js]
+    subgraph FirebaseBackend["Firebase Backend — Spark Free Plan"]
+        FB_Auth["Firebase Auth"]
+        FB_Firestore["Cloud Firestore"]
+        FB_Storage["Firebase Storage"]
     end
 
-    subgraph ExternalAPIs [External APIs]
-        AI[Anthropic Claude API]
-        GMaps[Google Maps API]
-        GOAuth[Google OAuth 2.0]
+    subgraph ExternalAPIs["External APIs"]
+        AI["Google Gemini API\nvia Retrofit — Free Tier"]
+        GMaps["Google Maps SDK\nCompose Integration"]
+        GOAuth["Google OAuth 2.0"]
     end
 
-    UI --> VM --> UC_L --> Repo
+    UI --> VM
+    VM --> UC_L
+    UC_L --> DM
+    UC_L --> Repo
     Repo --> LocalDS
     Repo --> RemoteDS
     RemoteDS --> FB_Auth
     RemoteDS --> FB_Firestore
     RemoteDS --> FB_Storage
-    RemoteDS --> CF
-    CF --> AI
-    FB_Firestore --> FB_FCM
+    RemoteDS --> AI
     FB_Auth --> GOAuth
     UI --> GMaps
+
+    Koin -.->|"injects"| VM
+    Koin -.->|"injects"| UC_L
+    Koin -.->|"injects"| Repo
 ```
+
+> **Notes:**
+> - `UI --> GMaps` — the Google Maps composable renders in the UI layer but **all map data (pins, camera position) is supplied by the ViewModel via StateFlow**. The UI fetches nothing directly.
+> - **Gemini API** is called via Retrofit from the Data layer. The key is obtained free from Google AI Studio — no credit card required. Key stored in `local.properties`, never committed to Git, accessed via `BuildConfig`.
+> - **Room** caches offline report drafts so user input is never lost if the network drops mid-submission.
+> - **No Cloud Functions** — the entire backend is driven by the Firebase SDK and direct Retrofit calls.
 
 ---
 
-## 5. Database Design & Data Modeling
+## 4. Database Design & Data Modelling
 
 ### ER Diagram
 
@@ -134,18 +130,16 @@ erDiagram
         string userID PK
         string name
         string email
-        string passwordHash
         string role
         string profilePhotoURL
-        float latitude
-        float longitude
+        float homeLatitude
+        float homeLongitude
         datetime createdAt
     }
 
     REPORT {
         string reportID PK
         string userID FK
-        string authorityID FK
         string title
         string rawDescription
         string aiGeneratedReport
@@ -158,14 +152,6 @@ erDiagram
         datetime updatedAt
     }
 
-    AUTHORITY {
-        string authorityID PK
-        string name
-        string jurisdiction
-        string contactEmail
-        string phone
-    }
-
     EVENT {
         string eventID PK
         string organizerID FK
@@ -175,14 +161,6 @@ erDiagram
         float longitude
         datetime eventDate
         int capacity
-        int registeredCount
-    }
-
-    EVENT_REGISTRATION {
-        string registrationID PK
-        string eventID FK
-        string userID FK
-        datetime registeredAt
     }
 
     NOTIFICATION {
@@ -203,139 +181,198 @@ erDiagram
     }
 
     USER ||--o{ REPORT : "submits"
-    USER ||--o{ EVENT_REGISTRATION : "registers for"
     USER ||--o{ COMMENT : "writes"
     USER ||--o{ NOTIFICATION : "receives"
-    USER ||--o{ EVENT : "organizes"
-    EVENT ||--o{ EVENT_REGISTRATION : "has"
     REPORT ||--o{ COMMENT : "has"
     REPORT ||--o{ NOTIFICATION : "triggers"
-    AUTHORITY ||--o{ REPORT : "receives"
 ```
 
-### Logical Schema (Key Tables)
+### Logical Schema
 
-**USER** (`userID` PK, `name`, `email`, `passwordHash`, `role` [citizen|admin|authority], `profilePhotoURL`, `latitude`, `longitude`, `createdAt`)
+**USER** (`userID` PK, `name`, `email`, `role` [citizen | admin], `profilePhotoURL`, `homeLatitude`, `homeLongitude`, `createdAt`)
 
-**REPORT** (`reportID` PK, `userID` FK → USER, `authorityID` FK → AUTHORITY, `title`, `rawDescription`, `aiGeneratedReport`, `photoURL`, `category` [dumping|pollution|litter|other], `status` [draft|submitted|under_review|in_progress|escalated|resolved|rejected], `latitude`, `longitude`, `createdAt`, `updatedAt`)
+> `passwordHash` is **intentionally absent** — Firebase Authentication manages all credentials securely. Passwords must never be stored in Firestore.
+> `homeLatitude` / `homeLongitude` store the user's **saved home location preference** (FR-22), not their real-time GPS position.
 
-**AUTHORITY** (`authorityID` PK, `name`, `jurisdiction`, `contactEmail`, `phone`)
+---
 
-**EVENT** (`eventID` PK, `organizerID` FK → USER, `title`, `description`, `latitude`, `longitude`, `eventDate`, `capacity`, `registeredCount`)
+**REPORT** (`reportID` PK, `userID` FK → USER, `title`, `rawDescription`, `aiGeneratedReport`, `photoURL`, `category` [litter | pollution | dumping | other], `status` [submitted | resolved | cancelled], `latitude`, `longitude`, `createdAt`, `updatedAt`)
 
-**EVENT_REGISTRATION** (`registrationID` PK, `eventID` FK → EVENT, `userID` FK → USER, `registeredAt`)
+> The AI generates a formally structured, authority-ready report draft. The citizen may forward this to the relevant local authority via their preferred channel. No direct authority system integration exists in MVP.
+
+---
+
+**EVENT** (`eventID` PK, `organizerID` FK → USER, `title`, `description`, `latitude`, `longitude`, `eventDate`, `capacity`)
+
+> Events are **read-only listings** in MVP. Citizen registration for events is a future enhancement.
+
+---
 
 **NOTIFICATION** (`notificationID` PK, `userID` FK → USER, `reportID` FK → REPORT, `message`, `isRead`, `createdAt`)
+
+---
 
 **COMMENT** (`commentID` PK, `reportID` FK → REPORT, `userID` FK → USER, `content`, `createdAt`)
 
 ---
 
-## 6. Data Flow & System Behavior
+## 5. Data Flow & System Behaviour
 
-### 6.1 Context-Level DFD (Level 0)
+### 5.1 Context-Level DFD (Level 0)
 
 ```mermaid
 flowchart LR
-    Citizen([👤 Citizen])
-    Authority([🏛️ Local Authority])
-    Admin([🛡️ Admin])
-    AI_Ext([🤖 AI Service])
+    Citizen(["👤 Citizen"])
+    AI_Ext(["🤖 Gemini 2.5 Flash API"])
 
-    Sys[[Eco-Guardian\nSystem]]
+    Sys[["Eco-Guardian\nAndroid App"]]
 
     Citizen -->|"Photo + Description + Location"| Sys
-    Sys -->|"Report Status & Notifications"| Citizen
-    Sys -->|"Structured Reports"| Authority
-    Authority -->|"Status Updates"| Sys
-    Admin -->|"Management Commands"| Sys
-    Sys -->|"Analytics & Reports"| Admin
-    Sys -->|"Raw Report Content"| AI_Ext
-    AI_Ext -->|"Structured Report Text"| Sys
+    Sys -->|"Report Status and Notifications"| Citizen
+    Sys -->|"Raw description + category"| AI_Ext
+    AI_Ext -->|"Structured report draft"| Sys
 ```
 
-### 6.2 Level 1 DFD
+---
+
+### 5.2 Level 1 DFD
 
 ```mermaid
 flowchart TD
-    Citizen([👤 Citizen])
-    Authority([🏛️ Authority])
-    AI([🤖 AI Service])
+    Citizen(["👤 Citizen"])
+    AI(["🤖 Gemini 2.5 Flash API"])
 
-    P1[1.0\nUser Authentication]
-    P2[2.0\nReport Submission]
-    P3[3.0\nAI Report Generation]
-    P4[4.0\nMap & Community View]
-    P5[5.0\nEvent Management]
-    P6[6.0\nNotification Service]
+    P1["1.0\nUser Authentication"]
+    P2["2.0\nReport Submission"]
+    P3["3.0\nAI Report Generation\nvia Gemini API"]
+    P4["4.0\nMap and Community View"]
+    P5["5.0\nEvent Browsing"]
+    P6["6.0\nNotification Service\nFirestore listener"]
+    P7["7.0\nCommunity Resolution\nGPS proximity check"]
 
-    DS1[(User Store)]
-    DS2[(Report Store)]
-    DS3[(Event Store)]
-    DS4[(Notification Store)]
+    DS1[("User Store\nFirestore")]
+    DS2[("Report Store\nFirestore + Storage")]
+    DS3[("Event Store\nFirestore")]
+    DS4[("Notification Store\nFirestore")]
 
-    Citizen -->|credentials| P1
+    Citizen -->|"credentials"| P1
     P1 <--> DS1
-    P1 -->|auth token| Citizen
+    P1 -->|"auth token"| Citizen
 
-    Citizen -->|"photo + description\n+ location"| P2
-    P2 -->|raw input| P3
-    P3 <-->|API call| AI
-    P3 -->|structured report| DS2
+    Citizen -->|"photo + description + location"| P2
+    P2 -->|"raw input"| P3
+    P3 <-->|"Retrofit HTTP call"| AI
+    P3 -->|"structured report draft"| P2
     P2 <--> DS2
-    P2 -->|submission confirmed| Citizen
+    P2 -->|"submission confirmed"| Citizen
 
-    DS2 -->|report pins| P4
-    P4 -->|map view| Citizen
+    DS2 -->|"report pins"| P4
+    P4 -->|"map view"| Citizen
 
-    Citizen -->|event query/register| P5
+    Citizen -->|"event query"| P5
     P5 <--> DS3
-    P5 -->|event data| Citizen
+    P5 -->|"event listings"| Citizen
 
-    DS2 -->|status change event| P6
+    DS2 -->|"status change event"| P6
     P6 <--> DS4
-    P6 -->|push notification| Citizen
+    P6 -->|"in-app notification"| Citizen
 
-    DS2 -->|new report| Authority
-    Authority -->|status update| DS2
+    Citizen -->|"resolve + optional photo + GPS"| P7
+    P7 <--> DS2
+    P7 -->|"status updated to Resolved"| Citizen
 ```
 
-### 6.3 Sequence Diagram — Report Submission Flow
+---
+
+### 5.3 Sequence Diagram — Report Submission Flow
 
 ```mermaid
 sequenceDiagram
     actor User
     participant App as Android App
     participant VM as ViewModel
+    participant UC as SubmitReportUseCase
     participant Repo as Repository
     participant Storage as Firebase Storage
     participant Firestore as Cloud Firestore
-    participant CF as Cloud Function
-    participant AI as Claude AI API
+    participant AI as Gemini API (Retrofit)
 
-    User->>App: Opens "Report Issue" screen
-    User->>App: Captures photo & enters description
-    App->>VM: submitReport(photo, description, location, category)
-    VM->>Repo: uploadPhoto(photo)
+    User->>App: Opens Report Issue screen
+    User->>App: Captures photo and enters description
+    App->>VM: onGenerateClicked(photo, description, location, category)
+    VM->>UC: execute(photo, description, location, category)
+
+    UC->>Repo: uploadPhoto(photo)
     Repo->>Storage: PUT image binary
-    Storage-->>Repo: returns photoURL
-    VM->>Repo: generateAIReport(description, category, photoURL)
-    Repo->>CF: POST /generateReport {description, category}
-    CF->>AI: Claude API prompt with raw description
-    AI-->>CF: Structured report JSON
-    CF-->>Repo: aiReport text
-    Repo-->>VM: AI report ready
-    VM-->>App: Display AI Report Preview screen
-    User->>App: Reviews & confirms report
-    VM->>Repo: saveReport(reportData)
+    Storage-->>Repo: photoURL
+
+    UC->>Repo: generateAIReport(description, category)
+    Repo->>AI: POST /v1/generateContent via Retrofit
+    AI-->>Repo: structured report JSON
+    Repo-->>UC: aiReport text
+
+    UC-->>VM: Result.Success(aiReport)
+    VM-->>App: update state — navigate to Preview screen
+
+    User->>App: Reviews AI draft — edits inline if needed
+    User->>App: Taps Confirm and Submit
+
+    App->>VM: onConfirmClicked(finalReport)
+    VM->>UC: saveReport(finalReport)
+    UC->>Repo: saveReport(reportData)
     Repo->>Firestore: write to /reports collection
     Firestore-->>Repo: success
-    Repo->>Firestore: notify matched Authority
-    VM-->>App: Show success confirmation
-    App-->>User: "Your report has been submitted!"
+    Repo-->>UC: Result.Success
+    UC-->>VM: Result.Success
+    VM-->>App: update state — navigate to Success screen
+    App-->>User: Your report has been submitted!
 ```
 
-### 6.4 Sequence Diagram — User Authentication Flow
+---
+
+### 5.4 Sequence Diagram — Community Resolution Flow
+
+```mermaid
+sequenceDiagram
+    actor NearbyUser as Nearby Citizen
+    participant App as Android App
+    participant VM as ViewModel
+    participant UC as ResolveReportUseCase
+    participant Repo as Repository
+    participant Firestore as Cloud Firestore
+
+    NearbyUser->>App: Taps report pin on map
+    App->>VM: onReportSelected(reportID)
+    VM->>UC: getReport(reportID)
+    UC->>Repo: fetchReport(reportID)
+    Repo->>Firestore: GET /reports/{reportID}
+    Firestore-->>Repo: report data
+    Repo-->>UC: Report
+    UC-->>VM: Report
+    VM-->>App: show Report Detail screen with Resolve button
+
+    NearbyUser->>App: Taps Mark as Resolved
+    App->>VM: onResolveClicked(reportID, userLocation)
+    VM->>UC: execute(reportID, userLocation)
+
+    UC->>UC: check GPS distance to report location
+    alt User is NOT within proximity radius
+        UC-->>VM: Result.Error(TooFarAway)
+        VM-->>App: show error — you must be near the issue to resolve it
+    else User is within proximity radius
+        UC->>Repo: updateStatus(reportID, RESOLVED)
+        Repo->>Firestore: update /reports/{reportID} status
+        Firestore-->>Repo: success
+        Repo-->>UC: Result.Success
+        UC-->>VM: Result.Success
+        VM-->>App: update state — report marked as Resolved
+        App-->>NearbyUser: Thank you for confirming this issue is resolved!
+    end
+```
+
+---
+
+### 5.5 Sequence Diagram — User Authentication Flow
 
 ```mermaid
 sequenceDiagram
@@ -344,11 +381,12 @@ sequenceDiagram
     participant FireAuth as Firebase Auth
     participant Firestore as Firestore DB
 
-    User->>App: Enters email + password OR taps Google Sign-In
-    App->>FireAuth: signInWithEmailAndPassword() / signInWithGoogle()
+    User->>App: Enters email and password OR taps Google Sign-In
+    App->>FireAuth: signInWithEmailAndPassword() or signInWithGoogle()
     FireAuth-->>App: Firebase ID Token
 
     App->>Firestore: GET /users/{userID}
+
     alt User profile exists
         Firestore-->>App: User profile data
         App-->>User: Navigate to Home Screen
@@ -360,83 +398,87 @@ sequenceDiagram
     end
 ```
 
-### 6.5 Activity Diagram — End-to-End Report Submission
+---
+
+### 5.6 Activity Diagram — End-to-End Report Submission
 
 ```mermaid
 flowchart TD
-    Start([🚀 User Opens App]) --> CheckLogin{Already\nLogged In?}
-    CheckLogin -->|No| Auth[Login / Register Screen]
+    Start(["User Opens App"]) --> CheckLogin{"Already\nLogged In?"}
+    CheckLogin -->|No| Auth["Login / Register Screen"]
     Auth --> Home
-    CheckLogin -->|Yes| Home[🏠 Home Screen]
+    CheckLogin -->|Yes| Home["Home Screen"]
 
-    Home --> TapReport[Tap Report Issue Button]
-    TapReport --> Camera[Open Camera / Gallery]
-    Camera --> Photo[Capture or Select Photo]
-    Photo --> Form[Fill Description\nSelect Category\nConfirm GPS Location]
-    Form --> Generate[Tap Generate AI Report]
-    Generate --> CallAI[Call Claude AI API\nvia Cloud Function]
-    CallAI --> Preview[Display AI Report Preview]
+    Home --> TapReport["Tap Report Issue"]
+    TapReport --> CheckCamPerm{"Camera\nPermission?"}
+    CheckCamPerm -->|Granted| Camera
+    CheckCamPerm -->|Denied| RequestCam["Request Camera Permission"]
+    RequestCam --> PermResult{"Result"}
+    PermResult -->|Granted| Camera["Open Camera / Gallery"]
+    PermResult -->|Permanently Denied| ShowRationale["Show Rationale Screen\nGuide user to Settings"]
+    ShowRationale --> Home
 
-    Preview --> Satisfied{User Happy\nWith Report?}
-    Satisfied -->|No - Edit| Form
-    Satisfied -->|Yes| Submit[Tap Submit]
+    Camera --> Photo["Capture or Select Photo"]
+    Photo --> Form["Fill Description\nSelect Category\nConfirm GPS Location"]
+    Form --> Generate["Tap Generate AI Report"]
+    Generate --> CallAI["Call Gemini API via Retrofit"]
 
-    Submit --> Upload[Upload Photo to\nFirebase Storage]
-    Upload --> Save[Save Report to\nCloud Firestore]
-    Save --> Route[Auto-Route to\nLocal Authority]
-    Route --> Pin[Pin on\nCommunity Map]
-    Pin --> Notify[Send Push Notification\nto Authority]
-    Notify --> Success([✅ Success Screen\nReport Submitted!])
+    CallAI --> AIResult{"AI Call\nSuccessful?"}
+    AIResult -->|Failure or Timeout| Fallback["Show error — offer to\nsubmit raw description instead"]
+    AIResult -->|Success| Preview["Display AI Draft Preview\neditable text field"]
+
+    Preview --> Satisfied{"Happy with\nthe draft?"}
+    Satisfied -->|"No — edit inline"| EditDraft["Edit draft text\ndirectly on Preview screen"]
+    EditDraft --> Satisfied
+    Satisfied -->|Yes| Submit["Tap Confirm and Submit"]
+    Fallback --> Submit
+
+    Submit --> Upload["Upload Photo to\nFirebase Storage"]
+    Upload --> Save["Save Report to\nCloud Firestore"]
+    Save --> Pin["Pin appears on\nCommunity Map"]
+    Pin --> Success(["Success Screen\nReport Submitted!"])
 ```
 
-### 6.6 State Diagram — Report Lifecycle
+---
+
+### 5.7 State Diagram — Report Lifecycle
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft : User starts a report
+    [*] --> Submitted : Citizen submits report
 
-    Draft --> Submitted : User confirms & submits
-    Draft --> Cancelled : User discards draft
+    Submitted --> Resolved : Nearby community member\nconfirms issue is fixed\n(GPS proximity check)
+    Submitted --> Cancelled : Reporter cancels their own report
 
-    Submitted --> UnderReview : Authority acknowledges receipt
-    Submitted --> Rejected : Authority rejects (invalid / duplicate)
+    Resolved --> Submitted : Any user reopens —\nissue has reappeared
 
-    UnderReview --> InProgress : Authority begins field action
-    UnderReview --> Rejected : Determined non-actionable
-
-    InProgress --> Resolved : Issue fully addressed & closed
-    InProgress --> Escalated : Requires higher authority intervention
-
-    Escalated --> InProgress : Escalation handled, returns to action
-    Escalated --> Resolved : Resolved after escalation
-
-    Rejected --> [*]
     Cancelled --> [*]
     Resolved --> [*]
 ```
 
-### 6.7 Class Diagram
+---
+
+### 5.8 Class Diagram
+
+> **Design rule:** Domain models are **pure data classes** — they hold state only. All operations live in **Use Cases** and **Repositories**.
 
 ```mermaid
 classDiagram
+
     class User {
         +String userID
         +String name
         +String email
         +String role
         +String profilePhotoURL
-        +Double latitude
-        +Double longitude
+        +Double homeLatitude
+        +Double homeLongitude
         +DateTime createdAt
-        +login()
-        +logout()
-        +updateProfile()
     }
 
     class Report {
         +String reportID
         +String userID
-        +String authorityID
         +String title
         +String rawDescription
         +String aiGeneratedReport
@@ -447,37 +489,13 @@ classDiagram
         +Double longitude
         +DateTime createdAt
         +DateTime updatedAt
-        +submit()
-        +updateStatus(status ReportStatus)
-        +addComment(comment Comment)
     }
 
     class ReportStatus {
         <<enumeration>>
-        DRAFT
         SUBMITTED
-        UNDER_REVIEW
-        IN_PROGRESS
-        ESCALATED
         RESOLVED
-        REJECTED
         CANCELLED
-    }
-
-    class AIReportService {
-        -String apiEndpoint
-        +generateReport(description String, category String) String
-        +buildPrompt(input RawReportInput) String
-        +parseResponse(response String) StructuredReport
-    }
-
-    class Authority {
-        +String authorityID
-        +String name
-        +String jurisdiction
-        +String contactEmail
-        +receiveReport(report Report)
-        +updateReportStatus(reportID String, status ReportStatus)
     }
 
     class Event {
@@ -489,17 +507,6 @@ classDiagram
         +Double longitude
         +DateTime eventDate
         +Int capacity
-        +Int registeredCount
-        +register(userID String)
-        +cancel()
-        +getAvailableSpots() Int
-    }
-
-    class EventRegistration {
-        +String registrationID
-        +String eventID
-        +String userID
-        +DateTime registeredAt
     }
 
     class Notification {
@@ -509,7 +516,6 @@ classDiagram
         +String message
         +Boolean isRead
         +DateTime createdAt
-        +markAsRead()
     }
 
     class Comment {
@@ -518,35 +524,64 @@ classDiagram
         +String userID
         +String content
         +DateTime createdAt
-        +delete()
+    }
+
+    class SubmitReportUseCase {
+        +execute(photo, description, location, category) Result
+    }
+
+    class GenerateAIReportUseCase {
+        +execute(description String, category String) String
+    }
+
+    class ResolveReportUseCase {
+        +execute(reportID String, userLocation LatLng) Result
+    }
+
+    class GetReportsUseCase {
+        +execute(filter ReportFilter) List~Report~
+    }
+
+    class AuthUseCase {
+        +signIn(email String, password String) Result
+        +signInWithGoogle() Result
+        +signOut()
     }
 
     class ReportRepository {
-        +submitReport(report Report) Result
+        +uploadPhoto(photo ByteArray) String
+        +generateAIReport(description String, category String) String
+        +saveReport(report Report) Result
         +getReports(filter ReportFilter) List~Report~
         +getReportsByLocation(lat Double, lng Double, radius Double) List~Report~
         +updateStatus(reportID String, status ReportStatus) Result
     }
 
     class EventRepository {
-        +getEvents(location LatLng, radius Double) List~Event~
-        +registerForEvent(eventID String, userID String) Result
-        +createEvent(event Event) Result
+        +getEvents(lat Double, lng Double, radius Double) List~Event~
+    }
+
+    class AuthRepository {
+        +signIn(email String, password String) Result
+        +signInWithGoogle() Result
+        +signOut()
+        +getCurrentUser() User
     }
 
     User "1" --> "0..*" Report : submits
-    User "1" --> "0..*" EventRegistration : registers for
     User "1" --> "0..*" Comment : writes
     User "1" --> "0..*" Notification : receives
-    User "1" --> "0..*" Event : organizes
-    Report "1" --> "1" ReportStatus : has
+    Report "1" --> "1" ReportStatus : has status
     Report "1" --> "0..*" Comment : contains
     Report "1" --> "0..*" Notification : triggers
-    Event "1" --> "0..*" EventRegistration : has
-    Authority "1" --> "0..*" Report : manages
-    AIReportService ..> Report : generates for
-    ReportRepository --> Report : manages
-    EventRepository --> Event : manages
-```
 
----
+    SubmitReportUseCase --> ReportRepository : uses
+    GenerateAIReportUseCase --> ReportRepository : uses
+    ResolveReportUseCase --> ReportRepository : uses
+    GetReportsUseCase --> ReportRepository : uses
+    AuthUseCase --> AuthRepository : uses
+
+    ReportRepository ..> Report : manages
+    EventRepository ..> Event : manages
+    AuthRepository ..> User : manages
+```
