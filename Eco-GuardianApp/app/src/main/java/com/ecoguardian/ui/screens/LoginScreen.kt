@@ -1,9 +1,12 @@
 package com.ecoguardian.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Email
@@ -50,6 +53,9 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .systemBarsPadding()
+            .imePadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -97,20 +103,26 @@ fun LoginScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(CircleShape)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                .padding(4.dp)
+                .height(56.dp)
+                .clip(RoundedCornerShape(50.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(6.dp)
+//                .fillMaxWidth()
+//                .clip(CircleShape)
+//                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+//                .padding(4.dp)
+            
         ) {
             // Login button
             Button(
                 onClick = { isLoginTab = true },
                 modifier = Modifier.weight(1f),
-                shape = CircleShape,
+                shape = RoundedCornerShape(50.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isLoginTab)
                         MaterialTheme.colorScheme.primary
                     else
-                        MaterialTheme.colorScheme.surface,
+                        MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = if (isLoginTab)
                         MaterialTheme.colorScheme.onPrimary
                     else
@@ -125,12 +137,12 @@ fun LoginScreen(
             Button(
                 onClick = { isLoginTab = false },
                 modifier = Modifier.weight(1f),
-                shape = CircleShape,
+                shape = RoundedCornerShape(50.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (!isLoginTab)
                         MaterialTheme.colorScheme.primary
                     else
-                        MaterialTheme.colorScheme.surface,
+                        MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = if (!isLoginTab)
                         MaterialTheme.colorScheme.onPrimary
                     else
