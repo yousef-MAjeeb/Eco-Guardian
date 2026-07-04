@@ -9,4 +9,5 @@ object Routes {
     const val ADMIN_PANEL = "adminPanel"
     const val AI_REPORT = "aiReport"
     const val FORGOT_PASSWORD = "forgotPassword" // placeholder, screen not built yet
+
 }

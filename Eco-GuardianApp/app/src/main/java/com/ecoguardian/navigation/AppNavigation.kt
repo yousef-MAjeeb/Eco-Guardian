@@ -66,6 +66,15 @@ fun AppNavigation() {
             )
         }
 
+
+
+        // User home screen
+        composable(Routes.USER_HOME) {
+            UserHomeScreen()
+        }
+
+
+
         // User home screen
         composable(Routes.USER_HOME) {
             UserHomeScreen()

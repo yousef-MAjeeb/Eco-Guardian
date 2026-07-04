@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.android)
 }
 
 val localProps = Properties().apply {
@@ -12,7 +13,7 @@ val localProps = Properties().apply {
 android {
     namespace = "com.ecoguardian"
     compileSdk {
-        version = release(37) {
+        version = release(36) {
         }
     }
 
@@ -45,6 +46,9 @@ android {
         compose = true
         buildConfig = true
     }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
 }
 
 dependencies {
@@ -71,6 +75,8 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:storage-kt:3.0.2")
     implementation("io.github.jan-tennert.supabase:realtime-kt:3.0.2")
     implementation("io.ktor:ktor-client-android:3.1.3")
+    implementation(libs.androidx.core.ktx)
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
