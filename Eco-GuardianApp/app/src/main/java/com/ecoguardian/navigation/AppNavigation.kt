@@ -45,7 +45,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.LOGIN
+        startDestination = Routes.USER_HOME
     ) {
         composable(Routes.LOGIN) {
             LoginScreen(
