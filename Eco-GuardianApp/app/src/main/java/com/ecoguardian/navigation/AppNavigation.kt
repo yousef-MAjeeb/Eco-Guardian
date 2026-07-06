@@ -4,15 +4,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ecoguardian.data.SupabaseClient
 import com.ecoguardian.ui.LoginScreen
 import com.ecoguardian.ui.screens.AdminPanelScreen
 import com.ecoguardian.ui.screens.UserHomeScreen
 import com.ecoguardian.viewmodel.AuthState
 import com.ecoguardian.viewmodel.AuthViewModel
+import com.ecoguardian.viewmodel.UserReportsViewModel
 
 @Composable
 fun AppNavigation() {
@@ -20,13 +23,10 @@ fun AppNavigation() {
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsState()
 
-    // Check if a session already exists when the app launches.
-    // If logged in, skips the login screen and goes directly to the correct home screen.
     LaunchedEffect(Unit) {
         authViewModel.checkSession()
     }
 
-    // Navigate based on auth state changes from checkSession()
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.NavigateToUser -> {
@@ -45,7 +45,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.USER_HOME
+        startDestination = Routes.LOGIN
     ) {
         composable(Routes.LOGIN) {
             LoginScreen(
@@ -66,18 +66,10 @@ fun AppNavigation() {
             )
         }
 
-
-
         // User home screen
         composable(Routes.USER_HOME) {
-            UserHomeScreen()
-        }
-
-
-
-        // User home screen
-        composable(Routes.USER_HOME) {
-            UserHomeScreen()
+            val userReportsViewModel = remember { UserReportsViewModel(SupabaseClient.client) }
+            UserHomeScreen(viewModel = userReportsViewModel)
         }
 
         // Admin panel
@@ -85,12 +77,12 @@ fun AppNavigation() {
             AdminPanelScreen()
         }
 
-        // AI report screen — shown after AI generates a report before submission
+        // AI report screen
         composable(Routes.AI_REPORT) {
             // placeholder until the screen is built by the team
         }
 
-        // Forgot password screen — placeholder until built
+        // Forgot password screen
         composable(Routes.FORGOT_PASSWORD) {
             // placeholder until the screen is built by the team
         }

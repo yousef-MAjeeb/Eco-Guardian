@@ -1,17 +1,12 @@
 package com.ecoguardian.ui.screens
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,43 +19,43 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.ecoguardian.data.FinishedBg
-import com.ecoguardian.data.FinishedText
-import com.ecoguardian.data.LightGrayBg
-import com.ecoguardian.data.PendingBg
-import com.ecoguardian.data.PendingText
-import com.ecoguardian.data.PrimaryGreen
-import com.ecoguardian.data.dummyReports
 import com.ecoguardian.data.Report
+import com.ecoguardian.viewmodel.UserReportsViewModel
 
 @Composable
-fun UserHomeScreen() {
+fun UserHomeScreen(viewModel: UserReportsViewModel) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    // 1. حالة جديدة عشان نتحكم في إظهار أو إخفاء نافذة الإضافة
-    var showAddDialog by remember { mutableStateOf(false) }
 
-    val filteredReports = dummyReports.filter { report ->
-        if (selectedTabIndex == 0) report.status == "Pending" else report.status == "Finished"
-    }
+    val pendingReports by viewModel.pendingReports.collectAsState()
+    val finishedReports by viewModel.finishedReports.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
-    // 2. استخدام Scaffold عشان نقدر نضيف الزرار العائم (FAB)
+    val displayedReports = if (selectedTabIndex == 0) pendingReports else finishedReports
+
+    // ضفنا Scaffold هنا عشان نحط زرار الإضافة العائم
     Scaffold(
-        modifier = Modifier.systemBarsPadding(), // لحل مشكلة شريط الإشعارات
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true }, // لما نضغط، نعرض النافذة
-                containerColor = PrimaryGreen,
+                onClick = {
+                    // هنا المفروض هنحط كود الانتقال لشاشة إضافة بلاغ لما تخلصوها
+                },
+                containerColor = Color(0xFF2E6B4F), // PrimaryGreen
                 contentColor = Color.White
             ) {
-                Text("+", fontSize = 24.sp)
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "إضافة بلاغ جديد"
+                )
             }
-        }
-    ) { innerPadding ->
+        },
+        containerColor = Color(0xFFF9FAFB) // LightGrayBg
+    ) { paddingValues ->
+
+        // المحتوى بتاعنا زي ما هو بس أخدنا الـ paddingValues من الـ Scaffold
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(LightGrayBg)
-                .padding(innerPadding) // مساحة للـ Scaffold
+                .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 24.dp)
         ) {
             CustomTabRow(
@@ -70,163 +65,23 @@ fun UserHomeScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 80.dp)
-            ) {
-                items(filteredReports) { report ->
-                    ReportCard(report = report)
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF2E6B4F))
                 }
-            }
-        }
-    }
-
-    // 3. لو المتغير بقى true، هنعرض الـ Dialog اللي فيه كود المعرض
-    if (showAddDialog) {
-        AddReportDialog(onDismiss = { showAddDialog = false })
-    }
-}
-
-// 4. النافذة المنبثقة لاختيار الصورة
-
-@Composable
-fun AddReportDialog(onDismiss: () -> Unit) {
-    // حالات لحفظ الصورة والنصوص
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var reportTitle by remember { mutableStateOf("") }
-    var reportDescription by remember { mutableStateOf("") }
-
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> selectedImageUri = uri }
-    )
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = "إضافة بلاغ جديد", fontWeight = FontWeight.Bold) },
-        text = {
-            // ضفنا verticalScroll عشان لو الكيبورد فتحت المستخدم يقدر ينزل ويطلع
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // 1. جزء الصورة
-                if (selectedImageUri != null) {
-                    AsyncImage(
-                        model = selectedImageUri,
-                        contentDescription = "Selected Image",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(150.dp) // صغرتها شوية عشان تدي مساحة للنصوص
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.LightGray)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(150.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.LightGray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("لم يتم اختيار صورة", color = Color.DarkGray)
+            } else if (displayedReports.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "لا توجد بلاغات في هذه القائمة", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp) // عشان الزرار العايم مايغطيش على آخر كارت
+                ) {
+                    items(displayedReports) { report ->
+                        ReportCard(report = report)
                     }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
-                        photoPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
-                ) {
-                    Text("اختر صورة للمشكلة")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 2. حقل إدخال العنوان
-                OutlinedTextField(
-                    value = reportTitle,
-                    onValueChange = { reportTitle = it },
-                    label = { Text("عنوان البلاغ") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true, // سطر واحد بس
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 3. حقل إدخال التفاصيل
-                OutlinedTextField(
-                    value = reportDescription,
-                    onValueChange = { reportDescription = it },
-                    label = { Text("تفاصيل المشكلة والمكان") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3, // بيبدأ بـ 3 سطور عشان يدي مساحة للكتابة
-                    maxLines = 5,
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    // هنا هتكتب اللوجيك اللي بياخد (selectedImageUri و reportTitle و reportDescription) ويبعتهم للسيرفر
-                    onDismiss()
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                // الزرار مش هيشتغل غير لو المستخدم كتب عنوان واختار صورة (اختياري بس بيحسن الـ UX)
-                enabled = reportTitle.isNotBlank() && selectedImageUri != null
-            ) {
-                Text("حفظ البلاغ")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("إلغاء", color = Color.Red)
-            }
-        }
-    )
-}
-
-// باقي الكود بتاعك (CustomTabRow و ReportCard) زي ما هو بالظبط من غير تعديل
-
-@Composable
-fun CustomTabRow(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
-    val tabs = listOf("Pending Reports", "Finished Reports")
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(50))
-            .background(Color.White)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        tabs.forEachIndexed { index, title ->
-            val isSelected = selectedTabIndex == index
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(50))
-                    .background(if (isSelected) PrimaryGreen else Color.Transparent)
-                    .clickable { onTabSelected(index) }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = title,
-                    color = if (isSelected) Color.White else Color.Gray,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = 14.sp
-                )
             }
         }
     }
@@ -247,7 +102,7 @@ fun ReportCard(report: Report) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = report.imageUrl,
+                model = report.photoUrl,
                 contentDescription = "Report Image",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -260,28 +115,32 @@ fun ReportCard(report: Report) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = report.title,
+                    text = report.reportText.ifEmpty { "بلاغ بدون تفاصيل" },
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = Color.Black,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = report.description,
-                    fontSize = 13.sp,
-                    color = Color.Gray,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 18.sp
-                )
+
+                if (report.locationLink.isNotEmpty()) {
+                    Text(
+                        text = "📍 الرابط: ${report.locationLink}",
+                        fontSize = 12.sp,
+                        color = Color.Blue,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            val badgeBgColor = if (report.status == "Pending") PendingBg else FinishedBg
-            val badgeTextColor = if (report.status == "Pending") PendingText else FinishedText
+            val isPending = report.status.lowercase() == "pending"
+            val badgeBgColor = if (isPending) Color(0xFFFFF3E0) else Color(0xFFE8F5E9)
+            val badgeTextColor = if (isPending) Color(0xFFE68A00) else Color(0xFF4CAF50)
 
             Surface(
                 shape = RoundedCornerShape(50),
@@ -289,13 +148,43 @@ fun ReportCard(report: Report) {
                 modifier = Modifier.align(Alignment.Top)
             ) {
                 Text(
-                    text = report.status,
+                    text = report.status.uppercase(),
                     color = badgeTextColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
+        }
+    }
+}
+
+// دالة CustomTabRow تفضل موجودة هنا تحت الكارت زي ما هي
+@Composable
+fun CustomTabRow(
+    selectedTabIndex: Int,
+    onTabSelected: (Int) -> Unit
+) {
+    val tabs = listOf("Pending", "Finished")
+
+    TabRow(
+        selectedTabIndex = selectedTabIndex,
+        containerColor = Color.White,
+        contentColor = Color(0xFF2E6B4F) // PrimaryGreen
+    ) {
+        tabs.forEachIndexed { index, title ->
+            Tab(
+                selected = selectedTabIndex == index,
+                onClick = { onTabSelected(index) },
+                text = {
+                    Text(
+                        text = title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = if (selectedTabIndex == index) Color(0xFF2E6B4F) else Color.Gray
+                    )
+                }
+            )
         }
     }
 }
