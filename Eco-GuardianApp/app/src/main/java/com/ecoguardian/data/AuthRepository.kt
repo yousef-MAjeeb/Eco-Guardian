@@ -51,4 +51,8 @@ class AuthRepository {
     fun getCurrentUserId(): String? {
         return client.auth.currentUserOrNull()?.id
     }
+
+    suspend fun sendPasswordReset(email: String){
+        client.auth.resetPasswordForEmail(email)
+    }
 }

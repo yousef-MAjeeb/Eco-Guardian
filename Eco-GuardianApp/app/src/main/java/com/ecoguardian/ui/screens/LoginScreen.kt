@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ecoguardian.ui.components.ForgotPasswordSheet
 import com.ecoguardian.viewmodel.AuthState
 import com.ecoguardian.viewmodel.AuthViewModel
 
@@ -41,6 +42,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val authState by viewModel.authState.collectAsState()
+    var showForgotSheet by remember { mutableStateOf(false) }
 
     // Navigate when auth succeeds
     LaunchedEffect(authState) {
@@ -108,11 +110,6 @@ fun LoginScreen(
                 .clip(RoundedCornerShape(50.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .padding(6.dp)
-//                .fillMaxWidth()
-//                .clip(CircleShape)
-//                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-//                .padding(4.dp)
-            
         ) {
             // Login button
             Button(
@@ -229,7 +226,7 @@ fun LoginScreen(
 
         // Forgot password
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-            TextButton(onClick = onForgotPassword) {
+            TextButton(onClick = { showForgotSheet = true }) {
                 Text(
                     text = "Forgot?",
                     style = MaterialTheme.typography.labelSmall,
@@ -276,5 +273,11 @@ fun LoginScreen(
                 )
             }
         }
+    }
+    if (showForgotSheet) {
+        ForgotPasswordSheet(
+            initialEmail = email,
+            onDismiss = { showForgotSheet = false }
+        )
     }
 }
