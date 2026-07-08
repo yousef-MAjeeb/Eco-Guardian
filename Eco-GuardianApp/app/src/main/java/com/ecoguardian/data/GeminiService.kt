@@ -27,7 +27,7 @@ class GeminiService(private val client: HttpClient) {
                     {
                       "parts": [
                         {
-                          "text": "no name included, put date: on top and leave it empty for the user to fill, You are an environmental inspector. Analyze this photo and write a report covering: 1) Type of waste visible, 2) Estimated quantity, 3) Severity level (Low/Medium/High). make sure its short and simple yet professional."
+                          "text": "no name included also remove all **, put date: on top and leave it empty for the user to fill, You are an environmental inspector. Analyze this photo and write a report covering: 1) Type of waste visible, 2) Estimated quantity, 3) Severity level (Low/Medium/High). make sure its short and simple yet professional."
                         },
                         {
                           "inline_data": {
