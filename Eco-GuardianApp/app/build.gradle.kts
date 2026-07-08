@@ -56,6 +56,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
+    implementation("androidx.core:core-ktx:1.13.1")
 
     //material icons
     implementation(libs.androidx.compose.material.icons.core)
