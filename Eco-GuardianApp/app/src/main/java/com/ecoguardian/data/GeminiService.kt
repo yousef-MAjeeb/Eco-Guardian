@@ -27,7 +27,7 @@ class GeminiService(private val client: HttpClient) {
                     {
                       "parts": [
                         {
-                          "text": "You are an environmental inspector. Analyze this photo and write a report covering: 1) Type of waste visible, 2) Estimated quantity, 3) Severity level (Low/Medium/High), 4) Environmental risks, 5) Recommended cleanup action. Be concise and professional."
+                          "text": "no name included, put the date on top as a blank to fill, You are an environmental inspector. Analyze this photo and write a report covering: 1) Type of waste visible, 2) Estimated quantity, 3) Severity level (Low/Medium/High). make sure its short and simple yet professional."
                         },
                         {
                           "inline_data": {

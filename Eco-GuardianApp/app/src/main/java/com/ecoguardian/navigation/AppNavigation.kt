@@ -28,7 +28,7 @@ fun AppNavigation() {
     val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(Unit) {
-        // authViewModel.checkSession()
+        //authViewModel.checkSession()
     }
 
     LaunchedEffect(authState) {
