@@ -1,17 +1,21 @@
 package com.ecoguardian.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.ecoguardian.data.SupabaseClient
 import com.ecoguardian.ui.LoginScreen
 import com.ecoguardian.ui.screens.AdminPanelScreen
+import com.ecoguardian.ui.screens.AiReportScreen
 import com.ecoguardian.ui.screens.UserHomeScreen
 import com.ecoguardian.viewmodel.AuthState
 import com.ecoguardian.viewmodel.AuthViewModel
@@ -24,7 +28,7 @@ fun AppNavigation() {
     val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(Unit) {
-        authViewModel.checkSession()
+        // authViewModel.checkSession()
     }
 
     LaunchedEffect(authState) {
@@ -69,7 +73,13 @@ fun AppNavigation() {
         // User home screen
         composable(Routes.USER_HOME) {
             val userReportsViewModel = remember { UserReportsViewModel(SupabaseClient.client) }
-            UserHomeScreen(viewModel = userReportsViewModel)
+            UserHomeScreen(
+                viewModel = userReportsViewModel,
+                onNavigateToAiReport = { uri ->
+                    val encodedUri = Uri.encode(uri.toString())
+                    navController.navigate(Routes.createAiReportRoute(encodedUri))
+                }
+            )
         }
 
         // Admin panel
@@ -78,8 +88,22 @@ fun AppNavigation() {
         }
 
         // AI report screen
-        composable(Routes.AI_REPORT) {
-            // placeholder until the screen is built by the team
+        composable(
+            route = Routes.AI_REPORT,
+            arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val encodedUri = backStackEntry.arguments?.getString("imageUri") ?: ""
+            val imageUri = Uri.parse(Uri.decode(encodedUri))
+            val userId = authViewModel.getCurrentUserId() ?: ""
+
+            AiReportScreen(
+                imageUri = imageUri,
+                supabase = SupabaseClient.client,
+                userId = userId,
+                onSubmitted = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         // Forgot password screen

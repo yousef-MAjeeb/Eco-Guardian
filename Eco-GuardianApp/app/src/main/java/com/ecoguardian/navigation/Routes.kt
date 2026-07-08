@@ -7,7 +7,8 @@ object Routes {
     const val LOGIN = "login"
     const val USER_HOME = "userHome"
     const val ADMIN_PANEL = "adminPanel"
-    const val AI_REPORT = "aiReport"
+    const val AI_REPORT = "aiReport/{imageUri}"
+    fun createAiReportRoute(uri: String) = "aiReport/$uri"
     const val FORGOT_PASSWORD = "forgotPassword" // placeholder, screen not built yet
 
 }

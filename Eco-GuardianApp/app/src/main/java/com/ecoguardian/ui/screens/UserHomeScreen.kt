@@ -1,5 +1,9 @@
 package com.ecoguardian.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,7 +27,10 @@ import com.ecoguardian.data.Report
 import com.ecoguardian.viewmodel.UserReportsViewModel
 
 @Composable
-fun UserHomeScreen(viewModel: UserReportsViewModel) {
+fun UserHomeScreen(
+    viewModel: UserReportsViewModel,
+    onNavigateToAiReport: (Uri) -> Unit
+) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     val pendingReports by viewModel.pendingReports.collectAsState()
@@ -32,12 +39,21 @@ fun UserHomeScreen(viewModel: UserReportsViewModel) {
 
     val displayedReports = if (selectedTabIndex == 0) pendingReports else finishedReports
 
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            uri?.let { onNavigateToAiReport(it) }
+        }
+    )
+
     // ضفنا Scaffold هنا عشان نحط زرار الإضافة العائم
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // هنا المفروض هنحط كود الانتقال لشاشة إضافة بلاغ لما تخلصوها
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
                 },
                 containerColor = Color(0xFF2E6B4F), // PrimaryGreen
                 contentColor = Color.White

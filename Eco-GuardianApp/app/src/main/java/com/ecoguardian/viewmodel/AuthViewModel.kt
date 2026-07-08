@@ -94,4 +94,8 @@ class AuthViewModel : ViewModel(){
             }
         }
     }
+
+    fun getCurrentUserId(): String? {
+        return repository.getCurrentUserId()
+    }
 }
