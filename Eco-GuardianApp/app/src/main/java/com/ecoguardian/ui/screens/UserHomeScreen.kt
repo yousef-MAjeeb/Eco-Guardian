@@ -1,10 +1,16 @@
 package com.ecoguardian.ui.screens
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,20 +18,30 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.ecoguardian.data.Report
 import com.ecoguardian.viewmodel.UserReportsViewModel
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +50,10 @@ fun UserHomeScreen(
     onNavigateToAiReport: (Uri) -> Unit,
     onLogoutClick: () -> Unit // تمت إضافة دالة تسجيل الخروج هنا
 ) {
+    val context = LocalContext.current
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+    var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     val pendingReports by viewModel.pendingReports.collectAsState()
     val finishedReports by viewModel.finishedReports.collectAsState()
@@ -73,11 +92,7 @@ fun UserHomeScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    photoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
+                onClick = { showImageSourceDialog = true },
                 containerColor = Color(0xFF2E6B4F), // PrimaryGreen
                 contentColor = Color.White
             ) {
@@ -151,6 +166,79 @@ fun UserHomeScreen(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ImageSourceDialog(
+    onDismiss: () -> Unit,
+    onGalleryClick: () -> Unit,
+    onCameraClick: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp, start = 16.dp, end = 16.dp)
+        ) {
+            Text(
+                text = "Choose image source",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            SourceOptionItem(
+                icon = Icons.Default.CameraAlt,
+                label = "Camera",
+                onClick = onCameraClick
+            )
+            
+            SourceOptionItem(
+                icon = Icons.Default.PhotoLibrary,
+                label = "Gallery",
+                onClick = onGalleryClick
+            )
+        }
+    }
+}
+
+@Composable
+fun SourceOptionItem(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = Color(0xFF2E6B4F),
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(text = label, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+private fun createTempImageUri(context: Context): Uri {
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    val file = File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
 }
 
 @Composable

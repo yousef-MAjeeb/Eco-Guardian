@@ -47,6 +47,7 @@ class ReportViewModel(
             try {
                 val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
+                    { decoder, _, _ -> decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE }
                 } else {
                     @Suppress("DEPRECATION")
                     MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
@@ -95,12 +96,11 @@ class ReportViewModel(
     }
 
     class Factory(
-        private val supabase: SupabaseClient,
         private val apiKey: String
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ReportViewModel::class.java)) {
-                val repository = ReportRepository(supabase)
+                val repository = ReportRepository()
                 val geminiService = GeminiService(HttpClient(Android))
                 @Suppress("UNCHECKED_CAST")
                 return ReportViewModel(repository, geminiService, apiKey) as T
