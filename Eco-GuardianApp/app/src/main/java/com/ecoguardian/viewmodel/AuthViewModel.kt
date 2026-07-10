@@ -3,9 +3,12 @@ package com.ecoguardian.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ecoguardian.data.AuthRepository
+import com.ecoguardian.data.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // Represents all possible states of the authentication flow.
 // Idle = no action, Loading = waiting for response,
@@ -61,16 +64,42 @@ class AuthViewModel : ViewModel(){
 
     // Signs the current user out of Supabase
     // Resets the auth state back to Idle on success
-    fun logout() {
+
+    // تعديل في AuthViewModel
+    fun logout(onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                repository.logout()
+                // 1. امسح الجلسة من السيرفر
+                SupabaseClient.client.auth.signOut()
+
                 _authState.value = AuthState.Idle
+
+                // 2. نفذ النقل لشاشة اللوجين على الـ Main Thread بعد نجاح الخروج
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onSuccess()
+                }
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "Logout failed")
+                println("Logout Error: ${e.message}")
+                // لو حصل خطأ ممكن تنفذ onSuccess برضه عشان تخرجه إجبارياً
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onSuccess()
+                }
             }
         }
     }
+//    fun logout() {
+//        viewModelScope.launch {
+//            try {
+//                // الكود ده بيمسح الـ Session من Supabase
+//                SupabaseClient.client.auth.signOut()
+//
+//                // لو عندك متغير بيحفظ حالة اليوزر (زي MutableStateFlow)، رجعه للحالة الافتراضية هنا
+//                // مثلاً: _authState.value = AuthState.Unauthenticated
+//            } catch (e: Exception) {
+//                println("Logout Error: ${e.message}")
+//            }
+//        }
+//    }
 
     // Checks if a user session already exists when the app starts.
     // If logged in, fetches their role and navigates to the correct screen automatically.
@@ -98,4 +127,5 @@ class AuthViewModel : ViewModel(){
     fun getCurrentUserId(): String? {
         return repository.getCurrentUserId()
     }
+
 }

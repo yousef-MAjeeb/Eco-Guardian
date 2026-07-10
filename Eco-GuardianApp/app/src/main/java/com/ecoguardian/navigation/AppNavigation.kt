@@ -28,7 +28,7 @@ fun AppNavigation() {
     val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(Unit) {
-        //authViewModel.checkSession()
+         authViewModel.checkSession()
     }
 
     LaunchedEffect(authState) {
@@ -73,18 +73,47 @@ fun AppNavigation() {
         // User home screen
         composable(Routes.USER_HOME) {
             val userReportsViewModel = remember { UserReportsViewModel(SupabaseClient.client) }
+
             UserHomeScreen(
                 viewModel = userReportsViewModel,
                 onNavigateToAiReport = { uri ->
                     val encodedUri = Uri.encode(uri.toString())
                     navController.navigate(Routes.createAiReportRoute(encodedUri))
+                },
+                // إضافة لوجيك تسجيل الخروج هنا
+                onLogoutClick = {
+                    // التطبيق هينتظر الـ logout يخلص، وبعدين ينفذ الـ navigate
+                    authViewModel.logout(onSuccess = {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    })
                 }
             )
         }
+//        composable(Routes.USER_HOME) {
+//            val userReportsViewModel = remember { UserReportsViewModel(SupabaseClient.client) }
+//            UserHomeScreen(
+//                viewModel = userReportsViewModel,
+//                onNavigateToAiReport = { uri ->
+//                    val encodedUri = Uri.encode(uri.toString())
+//                    navController.navigate(Routes.createAiReportRoute(encodedUri))
+//                }
+//            )
+//        }
 
         // Admin panel
         composable(Routes.ADMIN_PANEL) {
-            AdminPanelScreen()
+            AdminPanelScreen(
+                onLogoutClick = {
+                    // التطبيق هينتظر الـ logout يخلص، وبعدين ينفذ الـ navigate
+                    authViewModel.logout(onSuccess = {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    })
+                }
+            )
         }
 
         // AI report screen

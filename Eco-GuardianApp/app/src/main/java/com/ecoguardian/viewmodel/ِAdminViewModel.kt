@@ -8,8 +8,10 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -32,9 +34,13 @@ class AdminViewModel : ViewModel() {
         setupRealtimeSubscription()
     }
 
-    fun fetchAllReports() {
+    // 1. هنضيف متغير showLoading ونخليه true كقيمة افتراضية
+    fun fetchAllReports(showLoading: Boolean = true) {
         viewModelScope.launch {
-            _uiState.value = AdminUiState.Loading
+            // هنعرض حالة التحميل بس لو المتغير ده true
+            if (showLoading) {
+                _uiState.value = AdminUiState.Loading
+            }
             try {
                 val allReports = db.select().decodeList<Report>()
 
@@ -48,25 +54,18 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // إعداد الاتصال اللحظي (Realtime)
+    // 2. جوه الـ Realtime Subscription، هننادي عليها ونقوله ماتعرضش Loading
     private fun setupRealtimeSubscription() {
         viewModelScope.launch {
             try {
-                // 1. إنشاء قناة اتصال
                 val channel = SupabaseClient.client.channel("public-reports")
-
-                // 2. تحديد الجدول اللي هنراقبه
                 val changes = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
                     table = "reports"
                 }
-
-                // 3. تفعيل الاشتراك
                 channel.subscribe()
-
-                // 4. الاستماع لأي تغيير (Insert, Update, Delete)
-                changes.collect { action ->
-                    // أول ما يحصل تغيير، حدث القائمة فوراً
-                    fetchAllReports()
+                changes.collect {
+                    // أول ما يحصل تغيير، حدث القائمة في الخلفية بدون ما تبوظ شكل الشاشة
+                    fetchAllReports(showLoading = false)
                 }
             } catch (e: Exception) {
                 println("Realtime Error: ${e.message}")
@@ -74,24 +73,31 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    fun markAsFinished(reportId: Int) {
+
+    private val _snackbarEvent = MutableSharedFlow<String>()
+    val snackbarEvent = _snackbarEvent.asSharedFlow()
+
+    // وعدل دوال الحذف والتحديث عشان تبعت رسالة نجاح أو فشل
+    fun markAsFinished(reportId: String) {
         viewModelScope.launch {
             try {
                 db.update({ set("status", "finished") }) { filter { eq("id", reportId) } }
-                // شلنا fetchAllReports من هنا لأن الـ Realtime هيحدثها تلقائياً
+                _snackbarEvent.emit("تم تحديث حالة التقرير بنجاح")
+                fetchAllReports(showLoading = false)
             } catch (e: Exception) {
-                _uiState.value = AdminUiState.Error("Failed to update report")
+                _snackbarEvent.emit("فشل تحديث التقرير: ${e.message}")
             }
         }
     }
 
-    fun deleteReport(reportId: Int) {
+    fun deleteReport(reportId: String) {
         viewModelScope.launch {
             try {
                 db.delete { filter { eq("id", reportId) } }
-                // شلنا fetchAllReports من هنا لأن الـ Realtime هيحدثها تلقائياً
+                _snackbarEvent.emit("تم حذف التقرير بنجاح")
+                fetchAllReports(showLoading = false)
             } catch (e: Exception) {
-                _uiState.value = AdminUiState.Error("Failed to delete report")
+                _snackbarEvent.emit("فشل حذف التقرير: ${e.message}")
             }
         }
     }

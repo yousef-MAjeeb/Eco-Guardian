@@ -27,12 +27,36 @@ class UserReportsViewModel(private val supabase: SupabaseClient) : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    init {
-        fetchUserReports(showLoading = true)
-        setupRealtime() // تفعيل المراقبة الفورية أول ما الشاشة تفتح
+//    init {
+//        fetchUserReports(showLoading = true)
+//        setupRealtime() // تفعيل المراقبة الفورية أول ما الشاشة تفتح
+//    }
+// ضيف ده جوه الـ UserReportsViewModel
+init {
+    fetchUserReports() // الدالة الأساسية بتاعتك
+    setupRealtimeSubscription()
+}
+
+    private fun setupRealtimeSubscription() {
+        viewModelScope.launch {
+            try {
+                val channel = supabase.channel("public-reports-user")
+                val changes = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                    table = "reports"
+                }
+                channel.subscribe()
+
+                changes.collect {
+                    // أول ما الأدمن يوافق على التقرير أو يحذفه، حدث قايمة اليوزر فوراً
+                    fetchUserReports(showLoading = false)
+                }
+            } catch (e: Exception) {
+                println("Realtime Error: ${e.message}")
+            }
+        }
     }
 
-    private fun fetchUserReports(showLoading: Boolean) {
+    private fun fetchUserReports(showLoading: Boolean=true) {
         viewModelScope.launch {
             if (showLoading) _isLoading.value = true
             try {

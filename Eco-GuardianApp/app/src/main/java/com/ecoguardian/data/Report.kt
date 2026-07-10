@@ -15,7 +15,7 @@ val LightGrayBg = Color(0xFFF9FAFB)
 // الكلاس الجديد اللي بيطابق جدول reports في Supabase
 @Serializable
 data class Report(
-    val id: Int = 0,
+    val id: String="" ,
     @SerialName("user_id") val userId: String = "",
     @SerialName("photo_url") val photoUrl: String = "",
     @SerialName("location_link") val locationLink: String = "",

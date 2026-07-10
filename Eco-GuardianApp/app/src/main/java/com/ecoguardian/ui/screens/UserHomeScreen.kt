@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -42,10 +43,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserHomeScreen(
     viewModel: UserReportsViewModel,
-    onNavigateToAiReport: (Uri) -> Unit
+    onNavigateToAiReport: (Uri) -> Unit,
+    onLogoutClick: () -> Unit // تمت إضافة دالة تسجيل الخروج هنا
 ) {
     val context = LocalContext.current
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -65,49 +68,28 @@ fun UserHomeScreen(
         }
     )
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-        onResult = { success ->
-            if (success) {
-                capturedImageUri?.let { onNavigateToAiReport(it) }
-            }
-        }
-    )
-
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            val uri = createTempImageUri(context)
-            capturedImageUri = uri
-            cameraLauncher.launch(uri)
-        }
-    }
-
-    if (showImageSourceDialog) {
-        ImageSourceDialog(
-            onDismiss = { showImageSourceDialog = false },
-            onGalleryClick = {
-                showImageSourceDialog = false
-                photoPickerLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-            },
-            onCameraClick = {
-                showImageSourceDialog = false
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                    val uri = createTempImageUri(context)
-                    capturedImageUri = uri
-                    cameraLauncher.launch(uri)
-                } else {
-                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                }
-            }
-        )
-    }
-
-    // ضفنا Scaffold هنا عشان نحط زرار الإضافة العائم
     Scaffold(
+        containerColor = Color(0xFFF9FAFB), // LightGrayBg
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("My Reports", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E6B4F))
+                        Text("Track your community contributions", fontSize = 12.sp, color = Color.Gray)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onLogoutClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = Color(0xFF2E6B4F)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF9FAFB))
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showImageSourceDialog = true },
@@ -119,23 +101,50 @@ fun UserHomeScreen(
                     contentDescription = "إضافة بلاغ جديد"
                 )
             }
-        },
-        containerColor = Color(0xFFF9FAFB) // LightGrayBg
+        }
     ) { paddingValues ->
 
-        // المحتوى بتاعنا زي ما هو بس أخدنا الـ paddingValues من الـ Scaffold
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 24.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            CustomTabRow(
-                selectedTabIndex = selectedTabIndex,
-                onTabSelected = { selectedTabIndex = it }
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // تصميم التابات المطابق لشاشة الأدمن
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.White)
+                    .padding(4.dp)
+            ) {
+                TextButton(
+                    onClick = { selectedTabIndex = 0 },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    colors = ButtonDefaults.textButtonColors(
+                        containerColor = if (selectedTabIndex == 0) Color(0xFF2E6B4F) else Color.Transparent,
+                        contentColor = if (selectedTabIndex == 0) Color.White else Color(0xFF2E6B4F)
+                    )
+                ) { Text("Pending") }
+
+                TextButton(
+                    onClick = { selectedTabIndex = 1 },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    colors = ButtonDefaults.textButtonColors(
+                        containerColor = if (selectedTabIndex == 1) Color(0xFF2E6B4F) else Color.Transparent,
+                        contentColor = if (selectedTabIndex == 1) Color.White else Color(0xFF2E6B4F)
+                    )
+                ) { Text("Finished") }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -148,7 +157,7 @@ fun UserHomeScreen(
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp) // عشان الزرار العايم مايغطيش على آخر كارت
+                    contentPadding = PaddingValues(bottom = 80.dp) // عشان الزرار العايم
                 ) {
                     items(displayedReports) { report ->
                         ReportCard(report = report)
@@ -259,8 +268,9 @@ fun ReportCard(report: Report) {
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
+                // استخدمت take للحماية من الـ Crash لو النص قصير
                 Text(
-                    text = report.reportText.ifEmpty { "بلاغ بدون تفاصيل" },
+                    text = report.reportText.ifEmpty { "بلاغ بدون تفاصيل" }.take(50),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = Color.Black,
@@ -300,36 +310,6 @@ fun ReportCard(report: Report) {
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
-        }
-    }
-}
-
-// دالة CustomTabRow تفضل موجودة هنا تحت الكارت زي ما هي
-@Composable
-fun CustomTabRow(
-    selectedTabIndex: Int,
-    onTabSelected: (Int) -> Unit
-) {
-    val tabs = listOf("Pending", "Finished")
-
-    TabRow(
-        selectedTabIndex = selectedTabIndex,
-        containerColor = Color.White,
-        contentColor = Color(0xFF2E6B4F) // PrimaryGreen
-    ) {
-        tabs.forEachIndexed { index, title ->
-            Tab(
-                selected = selectedTabIndex == index,
-                onClick = { onTabSelected(index) },
-                text = {
-                    Text(
-                        text = title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = if (selectedTabIndex == index) Color(0xFF2E6B4F) else Color.Gray
-                    )
-                }
-            )
         }
     }
 }
