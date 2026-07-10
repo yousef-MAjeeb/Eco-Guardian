@@ -4,6 +4,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.Serializable
+import io.github.jan.supabase.auth.OtpType
 
 @Serializable
 data class Profile(
@@ -54,5 +55,19 @@ class AuthRepository {
 
     suspend fun sendPasswordReset(email: String){
         client.auth.resetPasswordForEmail(email)
+    }
+
+    suspend fun verifyRecoveryOtp(email: String, code: String) {
+        client.auth.verifyEmailOtp(
+            type = OtpType.Email.RECOVERY,
+            email = email,
+            token = code
+        )
+    }
+
+    suspend fun updatePassword(newPassword: String) {
+        client.auth.updateUser {
+            password = newPassword
+        }
     }
 }

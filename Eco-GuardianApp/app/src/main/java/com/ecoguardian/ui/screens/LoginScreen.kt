@@ -277,7 +277,8 @@ fun LoginScreen(
     if (showForgotSheet) {
         ForgotPasswordSheet(
             initialEmail = email,
-            onDismiss = { showForgotSheet = false }
+            onDismiss = { showForgotSheet = false },
+            viewModel = viewModel
         )
     }
 }

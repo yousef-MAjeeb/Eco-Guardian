@@ -19,6 +19,8 @@ sealed class AuthState {
     data class NavigateToUser(val message: String = "") : AuthState()
     data class NavigateToAdmin(val message: String = "") : AuthState()
     data class Error(val message: String) : AuthState()
+    object OtpSent : AuthState()
+    object PasswordResetSuccess : AuthState()
 }
 
 class AuthViewModel : ViewModel(){
@@ -26,6 +28,10 @@ class AuthViewModel : ViewModel(){
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
+
+    fun resetAuthState() {
+        _authState.value = AuthState.Idle
+    }
 
     // Logs in an existing user with email and password
     // On success, fetches the user's role and navigates to the correct screen (user or admin)
@@ -58,6 +64,31 @@ class AuthViewModel : ViewModel(){
                 _authState.value = AuthState.NavigateToUser()
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Registration failed")
+            }
+        }
+    }
+
+    fun requestPasswordReset(email: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                repository.sendPasswordReset(email)
+                _authState.value = AuthState.OtpSent
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Failed to send code")
+            }
+        }
+    }
+
+    fun verifyOtpAndResetPassword(email: String, code: String, newPassword: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                repository.verifyRecoveryOtp(email, code)
+                repository.updatePassword(newPassword)
+                _authState.value = AuthState.PasswordResetSuccess
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Failed to reset password")
             }
         }
     }
