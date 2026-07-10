@@ -1,11 +1,11 @@
 package com.ecoguardian.data
 
-import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.storage
 import java.util.UUID
 
-class ReportRepository(private val supabase: SupabaseClient) {
+class ReportRepository {
+    private val supabase = SupabaseClient.client
 
     suspend fun submitReport(
         userId: String,
@@ -15,16 +15,11 @@ class ReportRepository(private val supabase: SupabaseClient) {
     ) {
         val fileName = "$userId/${UUID.randomUUID()}.jpg"
         val bucket = supabase.storage.from("report-photos")
-        
-        // Upload the image
-        bucket.upload(fileName, imageBytes) {
-            upsert = true
-        }
 
-        // Get public URL
+        bucket.upload(fileName, imageBytes)
+
         val photoUrl = bucket.publicUrl(fileName)
 
-        // Insert into reports table
         val report = Report(
             userId = userId,
             photoUrl = photoUrl,
@@ -32,7 +27,6 @@ class ReportRepository(private val supabase: SupabaseClient) {
             locationLink = locationLink,
             status = "pending"
         )
-
         supabase.from("reports").insert(report)
     }
 }

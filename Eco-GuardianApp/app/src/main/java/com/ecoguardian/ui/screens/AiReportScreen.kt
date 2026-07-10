@@ -31,13 +31,12 @@ import io.github.jan.supabase.SupabaseClient
 @Composable
 fun AiReportScreen(
     imageUri: Uri,
-    supabase: SupabaseClient,
     userId: String,
     onSubmitted: () -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: ReportViewModel = viewModel(
-        factory = ReportViewModel.Factory(supabase, BuildConfig.GEMINI_API_KEY)
+        factory = ReportViewModel.Factory(BuildConfig.GEMINI_API_KEY)
     )
     val state by viewModel.uiState.collectAsState()
     

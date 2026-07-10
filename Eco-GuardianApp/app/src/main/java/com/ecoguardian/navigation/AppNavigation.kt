@@ -98,7 +98,6 @@ fun AppNavigation() {
 
             AiReportScreen(
                 imageUri = imageUri,
-                supabase = SupabaseClient.client,
                 userId = userId,
                 onSubmitted = {
                     navController.popBackStack()
