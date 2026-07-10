@@ -61,12 +61,50 @@ fun UserHomeScreen(
 
     val displayedReports = if (selectedTabIndex == 0) pendingReports else finishedReports
 
+    // Gallery picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
             uri?.let { onNavigateToAiReport(it) }
         }
     )
+
+    // Camera capture - writes to the Uri we generate via FileProvider, then navigates on success
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                capturedImageUri?.let { onNavigateToAiReport(it) }
+            }
+        }
+    )
+
+    // Runtime CAMERA permission request. If granted, immediately proceed to take a photo.
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted ->
+            if (granted) {
+                val uri = createTempImageUri(context)
+                capturedImageUri = uri
+                cameraLauncher.launch(uri)
+            }
+        }
+    )
+
+    fun launchCamera() {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            val uri = createTempImageUri(context)
+            capturedImageUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFFF9FAFB), // LightGrayBg
@@ -103,6 +141,22 @@ fun UserHomeScreen(
             }
         }
     ) { paddingValues ->
+
+        if (showImageSourceDialog) {
+            ImageSourceDialog(
+                onDismiss = { showImageSourceDialog = false },
+                onGalleryClick = {
+                    showImageSourceDialog = false
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                onCameraClick = {
+                    showImageSourceDialog = false
+                    launchCamera()
+                }
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -190,13 +244,13 @@ fun ImageSourceDialog(
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-            
+
             SourceOptionItem(
                 icon = Icons.Default.CameraAlt,
                 label = "Camera",
                 onClick = onCameraClick
             )
-            
+
             SourceOptionItem(
                 icon = Icons.Default.PhotoLibrary,
                 label = "Gallery",
