@@ -130,13 +130,9 @@ fun AppNavigation() {
                 userId = userId,
                 onSubmitted = {
                     navController.popBackStack()
-                }
+                },
+                onBackClick = { navController.popBackStack() }
             )
-        }
-
-        // Forgot password screen
-        composable(Routes.FORGOT_PASSWORD) {
-            // placeholder until the screen is built by the team
         }
     }
 }
