@@ -20,6 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.text.input.VisualTransformation
@@ -28,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.ecoguardian.ui.components.ForgotPasswordSheet
 import com.ecoguardian.viewmodel.AuthState
 import com.ecoguardian.viewmodel.AuthViewModel
+import com.ecoguardian.R
 
 @Composable
 fun LoginScreen(
@@ -73,10 +76,10 @@ fun LoginScreen(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.Shield,
+                painter = painterResource(id = R.drawable.ic_launcher_foreground),
                 contentDescription = "Eco Guardian Logo",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp)
+                tint = Color.Unspecified, // keep the drawable's own colors instead of tinting to a single color
+                modifier = Modifier.size(80.dp)
             )
         }
 
