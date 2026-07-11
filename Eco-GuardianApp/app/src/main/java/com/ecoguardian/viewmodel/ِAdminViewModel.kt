@@ -29,7 +29,6 @@ class AdminViewModel : ViewModel() {
     private val db = SupabaseClient.client.postgrest["reports"]
 
     init {
-        // أول ما الشاشة تفتح، نجلب البيانات ونشغل الـ Realtime
         fetchAllReports()
         setupRealtimeSubscription()
     }
@@ -77,7 +76,6 @@ class AdminViewModel : ViewModel() {
     private val _snackbarEvent = MutableSharedFlow<String>()
     val snackbarEvent = _snackbarEvent.asSharedFlow()
 
-    // وعدل دوال الحذف والتحديث عشان تبعت رسالة نجاح أو فشل
     fun markAsFinished(reportId: String) {
         viewModelScope.launch {
             try {
@@ -102,13 +100,3 @@ class AdminViewModel : ViewModel() {
         }
     }
 }
-//ملاحظة هامة جداً عشان الكود ده يشتغل:
-//الـ Realtime بيكون مقفول افتراضياً في Supabase لأسباب تخص الأمان وتقليل استهلاك السيرفر. عشان الكود اللي فوق ده يحس بالتغييرات، لازم تفعل الخاصية دي من لوحة تحكم موقع Supabase:
-//
-//افتح مشروعك على موقع Supabase.
-//
-//من القائمة الجانبية اختار Database وبعدين Replication.
-//
-//هتلاقي خيار اسمه Source وجنبه جداول مشروعك.
-//
-//فعل الزرار (Toggle) اللي جنب جدول reports.

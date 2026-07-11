@@ -334,7 +334,7 @@ fun ReportCard(report: Report) {
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                if (report.locationLink.isNotEmpty()) {
+                if (!report.locationLink.isNullOrEmpty()) {
                     Text(
                         text = "📍Link: ${report.locationLink}",
                         fontSize = 12.sp,

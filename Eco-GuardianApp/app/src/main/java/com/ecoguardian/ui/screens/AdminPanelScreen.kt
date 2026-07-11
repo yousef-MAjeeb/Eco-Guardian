@@ -60,7 +60,6 @@ fun AdminPanelScreen(
                     }
                 },
                 actions = {
-                    // زرار تسجيل الخروج
                     IconButton(onClick = onLogoutClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
