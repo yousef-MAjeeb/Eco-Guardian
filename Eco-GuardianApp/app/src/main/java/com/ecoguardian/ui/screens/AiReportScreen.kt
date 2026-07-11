@@ -26,13 +26,22 @@ import com.ecoguardian.viewmodel.ReportViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import io.github.jan.supabase.SupabaseClient
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiReportScreen(
     imageUri: Uri,
     userId: String,
-    onSubmitted: () -> Unit
+    onSubmitted: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: ReportViewModel = viewModel(
@@ -64,7 +73,19 @@ fun AiReportScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("AI Report Generation") })
+            TopAppBar(
+                title = { Text("AI Report Generation") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
         }
     ) { padding ->
         Column(
@@ -85,25 +106,63 @@ fun AiReportScreen(
                 contentScale = ContentScale.Crop
             )
 
-            Text(
-                text = "AI Generated Report",
-                style = MaterialTheme.typography.titleLarge
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.secondaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "AI Generated Report",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "Editable summary",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
 
-            if (state.isAnalyzing) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Analyzing image...")
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (state.isAnalyzing) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Analyzing image...")
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = state.reportText,
+                            onValueChange = { viewModel.onReportTextChange(it) },
+                            label = { Text("Report Content") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 6
+                        )
+                    }
                 }
-            } else {
-                OutlinedTextField(
-                    value = state.reportText,
-                    onValueChange = { viewModel.onReportTextChange(it) },
-                    label = { Text("Report Content") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 6
-                )
             }
 
             Row(
@@ -149,17 +208,30 @@ fun AiReportScreen(
 
             Button(
                 onClick = { viewModel.submitReport(userId) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
+                ),
                 enabled = !state.isAnalyzing && !state.isSubmitting && state.reportText.isNotBlank()
             ) {
                 if (state.isSubmitting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = MaterialTheme.colorScheme.onSecondary,
                         strokeWidth = 2.dp
                     )
                 } else {
                     Text("Submit Report")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }
