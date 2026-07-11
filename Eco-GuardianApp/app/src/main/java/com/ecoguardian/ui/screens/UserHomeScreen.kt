@@ -107,13 +107,13 @@ fun UserHomeScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF9FAFB), // LightGrayBg
+        containerColor = MaterialTheme.colorScheme.background, // LightGrayBg
         topBar = {
             TopAppBar(
                 title = {
                     Column {
-                        Text("My Reports", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E6B4F))
-                        Text("Track your community contributions", fontSize = 12.sp, color = Color.Gray)
+                        Text("My Reports", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Track your community contributions", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 actions = {
@@ -121,22 +121,22 @@ fun UserHomeScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Logout",
-                            tint = Color(0xFF2E6B4F)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF9FAFB))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showImageSourceDialog = true },
-                containerColor = Color(0xFF2E6B4F), // PrimaryGreen
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "إضافة بلاغ جديد"
+                    contentDescription = "Add a new report"
                 )
             }
         }
@@ -172,7 +172,7 @@ fun UserHomeScreen(
                     .fillMaxWidth()
                     .height(48.dp)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(4.dp)
             ) {
                 TextButton(
@@ -181,8 +181,8 @@ fun UserHomeScreen(
                         .weight(1f)
                         .fillMaxHeight(),
                     colors = ButtonDefaults.textButtonColors(
-                        containerColor = if (selectedTabIndex == 0) Color(0xFF2E6B4F) else Color.Transparent,
-                        contentColor = if (selectedTabIndex == 0) Color.White else Color(0xFF2E6B4F)
+                        containerColor = if (selectedTabIndex == 0) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        contentColor = if (selectedTabIndex == 0) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
                     )
                 ) { Text("Pending") }
 
@@ -192,8 +192,8 @@ fun UserHomeScreen(
                         .weight(1f)
                         .fillMaxHeight(),
                     colors = ButtonDefaults.textButtonColors(
-                        containerColor = if (selectedTabIndex == 1) Color(0xFF2E6B4F) else Color.Transparent,
-                        contentColor = if (selectedTabIndex == 1) Color.White else Color(0xFF2E6B4F)
+                        containerColor = if (selectedTabIndex == 1) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        contentColor = if (selectedTabIndex == 1) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
                     )
                 ) { Text("Finished") }
             }
@@ -202,11 +202,11 @@ fun UserHomeScreen(
 
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF2E6B4F))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (displayedReports.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "لا توجد بلاغات في هذه القائمة", color = Color.Gray)
+                    Text(text = "There are no reports on this list.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(
@@ -231,7 +231,7 @@ fun ImageSourceDialog(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
@@ -276,7 +276,7 @@ fun SourceOptionItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = Color(0xFF2E6B4F),
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
@@ -300,7 +300,7 @@ fun ReportCard(report: Report) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -324,10 +324,10 @@ fun ReportCard(report: Report) {
             Column(modifier = Modifier.weight(1f)) {
                 // استخدمت take للحماية من الـ Crash لو النص قصير
                 Text(
-                    text = report.reportText.ifEmpty { "بلاغ بدون تفاصيل" }.take(50),
+                    text = report.reportText.ifEmpty { "Report without details" }.take(50),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -336,9 +336,9 @@ fun ReportCard(report: Report) {
 
                 if (report.locationLink.isNotEmpty()) {
                     Text(
-                        text = "📍 الرابط: ${report.locationLink}",
+                        text = "📍Link: ${report.locationLink}",
                         fontSize = 12.sp,
-                        color = Color.Blue,
+                        color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -348,8 +348,8 @@ fun ReportCard(report: Report) {
             Spacer(modifier = Modifier.width(8.dp))
 
             val isPending = report.status.lowercase() == "pending"
-            val badgeBgColor = if (isPending) Color(0xFFFFF3E0) else Color(0xFFE8F5E9)
-            val badgeTextColor = if (isPending) Color(0xFFE68A00) else Color(0xFF4CAF50)
+            val badgeBgColor = if (isPending) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.tertiaryContainer
+            val badgeTextColor = if (isPending) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onTertiaryContainer
 
             Surface(
                 shape = RoundedCornerShape(50),
