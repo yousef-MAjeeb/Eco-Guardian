@@ -55,8 +55,9 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun EcoGuardianTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
+    // Forced false: app always renders in light mode, regardless of system setting
+    darkTheme: Boolean = false,
+    // Disabled: we use a fixed brand palette, not wallpaper-derived dynamic colors
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
