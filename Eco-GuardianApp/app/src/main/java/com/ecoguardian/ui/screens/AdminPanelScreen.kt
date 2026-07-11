@@ -49,14 +49,14 @@ fun AdminPanelScreen(
     }
 
     Scaffold(
-        containerColor = LightGrayBg,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Admin Panel", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
-                        Text("Review community reports", fontSize = 12.sp, color = Color.Gray)
+                        Text("Admin Panel", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Review community reports", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 actions = {
@@ -65,11 +65,11 @@ fun AdminPanelScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Logout",
-                            tint = PrimaryGreen
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = LightGrayBg)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { paddingValues ->
@@ -85,7 +85,7 @@ fun AdminPanelScreen(
                     .fillMaxWidth()
                     .height(48.dp)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(4.dp)
             ) {
                 TextButton(
@@ -94,8 +94,8 @@ fun AdminPanelScreen(
                         .weight(1f)
                         .fillMaxHeight(),
                     colors = ButtonDefaults.textButtonColors(
-                        containerColor = if (isPendingTabSelected) PrimaryGreen else Color.Transparent,
-                        contentColor = if (isPendingTabSelected) Color.White else PrimaryGreen
+                        containerColor = if (isPendingTabSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        contentColor = if (isPendingTabSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
                     )
                 ) { Text("Pending Reports") }
 
@@ -105,8 +105,8 @@ fun AdminPanelScreen(
                         .weight(1f)
                         .fillMaxHeight(),
                     colors = ButtonDefaults.textButtonColors(
-                        containerColor = if (!isPendingTabSelected) PrimaryGreen else Color.Transparent,
-                        contentColor = if (!isPendingTabSelected) Color.White else PrimaryGreen
+                        containerColor = if (!isPendingTabSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        contentColor = if (!isPendingTabSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
                     )
                 ) { Text("Finished Reports") }
             }
@@ -117,7 +117,7 @@ fun AdminPanelScreen(
             when (uiState) {
                 is AdminUiState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = PrimaryGreen)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 is AdminUiState.Error -> {
@@ -130,7 +130,7 @@ fun AdminPanelScreen(
                     }
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Button(onClick = { viewModel.fetchAllReports() }) {
-                            Text("إعادة المحاولة")
+                            Text("Try again")
                         }
                     }
                 }
@@ -156,7 +156,7 @@ fun RenderReportsList(
     viewModel: AdminViewModel
 ) {
     if (isPending) {
-        Text("Pending Reports", fontWeight = FontWeight.Bold, color = PrimaryGreen)
+        Text("Pending Reports", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(8.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(pendingList) { report ->
@@ -168,7 +168,7 @@ fun RenderReportsList(
             }
         }
     } else {
-        Text("Finished Reports", fontWeight = FontWeight.Bold, color = PrimaryGreen)
+        Text("Finished Reports", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(8.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(finishedList) { report ->
@@ -182,7 +182,7 @@ fun RenderReportsList(
 fun PendingReportCard(report: Report, onMarkFinished: () -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -195,26 +195,26 @@ fun PendingReportCard(report: Report, onMarkFinished: () -> Unit, onDelete: () -
                         modifier = Modifier
                             .size(60.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color.LightGray)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     )
 
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Column {
                         // استخدام take() أأمن من substring عشان تمنع الـ Crash لو النص أقصر من 40 حرف
-                        Text(report.reportText.take(40), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(report.reportText.take(40), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(report.reportText, fontSize = 12.sp, color = Color.DarkGray, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(report.reportText, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 }
 
                 Text(
                     text = report.status,
                     fontSize = 10.sp,
-                    color = PendingText, // تأكد إن المتغير ده متعرف في ملف الألوان بتاعك
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
-                        .background(PendingBg, RoundedCornerShape(8.dp)) // تأكد إن المتغير ده متعرف
+                        .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
@@ -223,7 +223,10 @@ fun PendingReportCard(report: Report, onMarkFinished: () -> Unit, onDelete: () -
                 Button(
                     onClick = onMarkFinished,
                     modifier = Modifier.weight(1f).height(40.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -232,7 +235,10 @@ fun PendingReportCard(report: Report, onMarkFinished: () -> Unit, onDelete: () -
                 Button(
                     onClick = onDelete,
                     modifier = Modifier.weight(1f).height(40.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE), contentColor = Color(0xFFD32F2F)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -247,7 +253,7 @@ fun PendingReportCard(report: Report, onMarkFinished: () -> Unit, onDelete: () -
 fun FinishedReportCard(report: Report) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp)
     ) {
         Row(
@@ -261,15 +267,15 @@ fun FinishedReportCard(report: Report) {
                 modifier = Modifier
                     .size(60.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(report.reportText.take(50), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(report.reportText.take(50), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(report.reportText, fontSize = 12.sp, color = Color.DarkGray, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(report.reportText, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -277,10 +283,10 @@ fun FinishedReportCard(report: Report) {
             Text(
                 text = report.status,
                 fontSize = 10.sp,
-                color = FinishedText,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
-                    .background(FinishedBg, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(8.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             )
         }
